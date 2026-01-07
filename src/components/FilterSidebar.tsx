@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { schemes } from '../data/schemes';
 
 interface FilterSidebarProps {
   filters: any;
@@ -12,21 +13,25 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     let newValues;
     
     if (checked) {
-      // Add if not already present
-      if (!currentValues.includes(option)) {
-        newValues = [...currentValues, option];
+      // If "All" is selected, clear all other options and only keep "All"
+      if (option === 'All') {
+        newValues = [];
       } else {
-        return; // Already checked, don't update
+        // If another option is selected, remove "All" if it exists
+        newValues = currentValues.filter((item: string) => item !== 'All');
+        // Add the new option if not already present
+        if (!newValues.includes(option)) {
+          newValues = [...newValues, option];
+        }
       }
     } else {
       // Remove if present
       newValues = currentValues.filter((item: string) => item !== option);
     }
-
-    console.log(`Filter changed: ${filterKey} = ${newValues.join(', ')}`);
     
-    // Pass only the changed filter
+    // Pass all filters with the updated filter
     onFiltersChange({
+      ...filters,
       [filterKey]: newValues
     });
   }, [filters, onFiltersChange]);
@@ -47,6 +52,53 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     ministry: false,
   });
 
+  // Auto-expand sections that have active filters
+  useEffect(() => {
+    const newExpandedSections = { ...expandedSections };
+    
+    if (filters.states && filters.states.length > 0) {
+      newExpandedSections.state = true;
+    }
+    if (filters.gender && filters.gender.length > 0) {
+      newExpandedSections.gender = true;
+    }
+    if (filters.caste && filters.caste.length > 0) {
+      newExpandedSections.caste = true;
+    }
+    if (filters.categories && filters.categories.length > 0) {
+      newExpandedSections.category = true;
+    }
+    if (filters.residence && filters.residence.length > 0) {
+      newExpandedSections.residence = true;
+    }
+    if (filters.benefitType && filters.benefitType.length > 0) {
+      newExpandedSections.benefitType = true;
+    }
+    if (filters.maritalStatus && filters.maritalStatus.length > 0) {
+      newExpandedSections.maritalStatus = true;
+    }
+    if (filters.employmentStatus && filters.employmentStatus.length > 0) {
+      newExpandedSections.employmentStatus = true;
+    }
+    if (filters.occupation && filters.occupation.length > 0) {
+      newExpandedSections.occupation = true;
+    }
+    if (filters.specialCategories && filters.specialCategories.length > 0) {
+      newExpandedSections.specialCategories = true;
+    }
+    if (filters.disabilityPercentage && filters.disabilityPercentage.length > 0) {
+      newExpandedSections.disabilityPercentage = true;
+    }
+    if (filters.ageGroup && filters.ageGroup.length > 0) {
+      newExpandedSections.ageGroup = true;
+    }
+    if (filters.ministry && filters.ministry.length > 0) {
+      newExpandedSections.ministry = true;
+    }
+    
+    setExpandedSections(newExpandedSections);
+  }, [filters]);
+
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -54,241 +106,242 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     }));
   };
 
-  const filterOptions = {
-    ministry: [
-      'All',
-      'Ministry of Agriculture',
-      'Ministry of Education',
-      'Ministry of Health and Family Welfare',
-      'Ministry of Social Justice and Empowerment',
-      'Ministry of Labour and Employment',
-      'Ministry of Housing and Urban Affairs',
-      'Ministry of Women and Child Development'
-    ],
-    state: [
-      'All',
-      'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-      'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
-      'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
-      'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
-      'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
-      'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu and Kashmir',
-      'Ladakh', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu',
-      'Lakshadweep', 'Puducherry', 'Andaman and Nicobar Islands'
-    ],
-    gender: ['All', 'Male', 'Female', 'Transgender'],
-    caste: [
-      'All',
-      'Scheduled Caste (SC)',
-      'Scheduled Tribe (ST)',
-      'General',
-      'Other Backward Class (OBC)',
-      'De-Notified, Nomadic, and Semi-Nomadic (DNT) communities',
-      'Particularly Vulnerable Tribal Group (PVTG)'
-    ],
-    residence: ['All', 'Urban', 'Rural'],
-    benefitType: [
-      'All',
-      'Financial Assistance', 'Scholarship', 'Subsidy', 'Insurance',
-      'Training', 'Employment', 'Healthcare', 'Housing', 'Education'
-    ],
-    maritalStatus: ['All', 'Never Married', 'Married', 'Widowed', 'Separated', 'Divorced'],
-    employmentStatus: ['All', 'Employed', 'Unemployed', 'Self-Employed', 'Student'],
-    ageGroup: [
-      'All',
-      '0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81+'
-    ],
-    category: [
-      'All',
-      'Agriculture,Rural & Environment',
-      'Banking,Financial Services and Insurance',
-      'Business & Entrepreneurship',
-      'Education & Learning',
-      'Health & Wellness',
-      'Housing & Shelter',
-      'Skills & Employment',
-      'Social welfare & Empowerment',
-      'Women and Child'
-    ]
-  };
+  // Dynamically calculate counts from schemes data
+  const stateOptions = useMemo(() => {
+    const stateCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const state = scheme.classified_state || 'Unknown';
+      // Exclude Central/National and other non-state values from filter
+      if (state !== 'Central/National' && state !== 'Central' && state !== 'Not specified' && state !== 'Unknown') {
+        stateCounts.set(state, (stateCounts.get(state) || 0) + 1);
+      }
+    });
+    
+    const options = Array.from(stateCounts.entries())
+      .map(([state, count]) => ({ value: state, label: state, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
+
+  const ageGroupOptions = useMemo(() => {
+    const ageCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const tags = scheme.age_tags || [];
+      tags.forEach(tag => {
+        ageCounts.set(tag, (ageCounts.get(tag) || 0) + 1);
+      });
+    });
+    
+    const ageRanges = ['0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100', '101-110'];
+    return [
+      { value: 'All', label: 'All Ages', count: schemes.length },
+      ...ageRanges.map(range => ({
+        value: range,
+        label: `${range} years`,
+        count: ageCounts.get(range) || 0
+      }))
+    ];
+  }, []);
+
+  const ministryOptions = useMemo(() => {
+    const ministryCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const ministry = scheme.ministry;
+      if (ministry) {
+        ministryCounts.set(ministry, (ministryCounts.get(ministry) || 0) + 1);
+      }
+    });
+    
+    const options = Array.from(ministryCounts.entries())
+      .map(([ministry, count]) => ({ 
+        value: ministry, 
+        label: ministry.replace('Ministry Of ', '').replace('Ministry of ', ''),
+        count 
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .slice(0, 20);
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
   // NEW SPECIAL CATEGORIES OPTIONS WITH COUNTS FROM YOUR DATASET
-  const specialCategoriesOptions = [
-    { value: 'All', label: 'All', count: 3809 },
-    { value: 'Student', label: 'Student', count: 797 },
-    { value: 'Below Poverty Line', label: 'Below Poverty Line', count: 442 },
-    { value: 'Differently Abled', label: 'Differently Abled', count: 419 },
-    { value: 'DBT Scheme', label: 'DBT Scheme', count: 274 },
-    { value: 'Minority', label: 'Minority', count: 118 },
-    { value: 'Government Employee', label: 'Government Employee', count: 22 },
-    { value: 'Economic Distress', label: 'Economic Distress', count: 20 }
-  ];
+  const specialCategoriesOptions = useMemo(() => {
+    const specialCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const specials = Array.isArray(scheme.filter_special_categories) 
+        ? scheme.filter_special_categories 
+        : (scheme.filter_special_categories ? [scheme.filter_special_categories] : []);
+      specials.forEach(special => {
+        specialCounts.set(special, (specialCounts.get(special) || 0) + 1);
+      });
+    });
+    
+    const options = Array.from(specialCounts.entries())
+      .map(([special, count]) => ({ value: special, label: special, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
-  const casteOptions = [
-    { value: 'All', label: 'All', count: 2726 },
-    { value: 'Scheduled Caste (SC)', label: 'SC', count: 599 },
-    { value: 'Scheduled Tribe (ST)', label: 'ST', count: 201 },
-    { value: 'General', label: 'General', count: 149 },
-    { value: 'Other Backward Class (OBC)', label: 'OBC', count: 64 },
-    { 
-      value: 'De-Notified, Nomadic, and Semi-Nomadic (DNT) communities', 
-      label: 'DNT', 
-      count: 63 
-    },
-    { 
-      value: 'Particularly Vulnerable Tribal Group (PVTG)', 
-      label: 'PVTG', 
-      count: 7 
-    },
-  ];
+  const casteOptions = useMemo(() => {
+    const casteCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const castes = scheme.filter_caste || [];
+      // Count each caste value in the array
+      castes.forEach(caste => {
+        if (caste && caste !== 'All') {
+          casteCounts.set(caste, (casteCounts.get(caste) || 0) + 1);
+        }
+      });
+    });
+    
+    const options = Array.from(casteCounts.entries())
+      .map(([caste, count]) => ({ 
+        value: caste, 
+        label: caste.replace('Scheduled Caste (SC)', 'SC')
+                    .replace('Scheduled Tribe (ST)', 'ST')
+                    .replace('Other Backward Class (OBC)', 'OBC')
+                    .replace('De-Notified, Nomadic, and Semi-Nomadic (DNT) communities', 'DNT')
+                    .replace('Particularly Vulnerable Tribal Group (PVTG)', 'PVTG'), 
+        count 
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
-  const maritalStatusOptions = [
-    { value: 'All', label: 'All', count: 3142 },
-    { value: 'Never Married', label: 'Never Married', count: 255 },
-    { value: 'Married', label: 'Married', count: 251 },
-    { value: 'Widowed', label: 'Widowed', count: 155 },
-    { value: 'Separated', label: 'Separated', count: 3 },
-    { value: 'Divorced', label: 'Divorced', count: 3 },
-  ];
+  const maritalStatusOptions = useMemo(() => {
+    const maritalCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const marital = scheme.filter_marital_status;
+      if (marital && marital !== 'All') {
+        maritalCounts.set(marital, (maritalCounts.get(marital) || 0) + 1);
+      }
+    });
+    
+    const options = Array.from(maritalCounts.entries())
+      .map(([marital, count]) => ({ value: marital, label: marital, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
-  const employmentOptions = [
-    { value: 'All', label: 'All', count: 2452 },
-    { value: 'Employed', label: 'Employed', count: 1098 },
-    { value: 'Self-Employed/ Entrepreneur', label: 'Self-Employed', count: 128 },
-    { value: 'Unemployed', label: 'Unemployed', count: 131 },
-  ];
+  const employmentOptions = useMemo(() => {
+    const employmentCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const employment = scheme.filter_employment_status;
+      if (employment && employment !== 'All') {
+        employmentCounts.set(employment, (employmentCounts.get(employment) || 0) + 1);
+      }
+    });
+    
+    const options = Array.from(employmentCounts.entries())
+      .map(([employment, count]) => ({ value: employment, label: employment, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
-  const residenceOptions = [
-    { value: 'All', label: 'All', count: 3009 },
-    { value: 'Urban', label: 'Urban', count: 105 },
-    { value: 'Rural', label: 'Rural', count: 695 },
-  ];
+  const residenceOptions = useMemo(() => {
+    const residenceCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const residence = scheme.filter_residence;
+      if (residence && residence !== 'All') {
+        residenceCounts.set(residence, (residenceCounts.get(residence) || 0) + 1);
+      }
+    });
+    
+    const options = Array.from(residenceCounts.entries())
+      .map(([residence, count]) => ({ value: residence, label: residence, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
-  const genderOptions = [
-    { value: 'All', label: 'All', count: 2890 },
-    { value: 'Female', label: 'Female', count: 769 },
-    { value: 'Male', label: 'Male', count: 97 },
-    { value: 'Transgender', label: 'Transgender', count: 53 },
-  ];
+  const genderOptions = useMemo(() => {
+    const genderCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const gender = scheme.filter_gender;
+      if (gender && gender !== 'All') {
+        genderCounts.set(gender, (genderCounts.get(gender) || 0) + 1);
+      }
+    });
+    
+    const options = Array.from(genderCounts.entries())
+      .map(([gender, count]) => ({ value: gender, label: gender, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
-  const benefitTypeOptions = [
-    { value: 'Cash', label: 'Cash', count: 1716 },
-    { value: 'In Kind', label: 'In Kind', count: 2090 },
-    { value: 'Composite', label: 'Composite', count: 3 },
-  ];
+  const benefitTypeOptions = useMemo(() => {
+    const benefitCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const benefit = scheme.filter_benefit_type;
+      if (benefit) {
+        benefitCounts.set(benefit, (benefitCounts.get(benefit) || 0) + 1);
+      }
+    });
+    
+    const options = Array.from(benefitCounts.entries())
+      .map(([benefit, count]) => ({ value: benefit, label: benefit, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
-  const occupationOptions = [
-    { value: 'All', label: 'All', count: 3809 },
-    { value: 'No', label: 'No Specific Occupation', count: 2319 },
-    { value: 'Construction Worker', label: 'Construction Worker', count: 463 },
-    { value: 'Farmer', label: 'Farmer', count: 343 },
-    { value: 'Teacher / Faculty', label: 'Teacher / Faculty', count: 114 },
-    { value: 'Ex Servicemen', label: 'Ex Servicemen', count: 84 },
-    { value: 'Fishermen', label: 'Fishermen', count: 83 },
-    { value: 'Artist', label: 'Artist', count: 80 },
-    { value: 'Artisans, Spinners & Weavers', label: 'Artisans, Spinners & Weavers', count: 75 },
-    { value: 'Health Worker', label: 'Health Worker', count: 52 },
-    { value: 'Unorganized Worker', label: 'Unorganized Worker', count: 45 },
-    { value: 'Sportsperson', label: 'Sportsperson', count: 35 },
-    { value: 'Safai Karamchari', label: 'Safai Karamchari', count: 31 },
-    { value: 'Khadi Artisan', label: 'Khadi Artisan', count: 27 },
-    { value: 'Journalist', label: 'Journalist', count: 26 },
-    { value: 'Street Vendor', label: 'Street Vendor', count: 14 },
-    { value: 'Tea and Ex-Tea Garden tribes', label: 'Tea Garden Worker', count: 8 },
-    { value: 'Coir Worker', label: 'Coir Worker', count: 7 },
-    { value: 'Organized Worker', label: 'Organized Worker', count: 3 }
-  ];
+  const occupationOptions = useMemo(() => {
+    const occupationCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const occupation = scheme.filter_occupation;
+      if (occupation && occupation !== 'All') {
+        occupationCounts.set(occupation, (occupationCounts.get(occupation) || 0) + 1);
+      }
+    });
+    
+    const options = Array.from(occupationCounts.entries())
+      .map(([occupation, count]) => ({ 
+        value: occupation, 
+        label: occupation === 'No' ? 'No Specific Occupation' : occupation, 
+        count 
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
-  // CORRECTED disability percentage options to match actual dataset
-  const disabilityPercentageOptions = [
-    { value: 'All', label: 'All', count: 3809 },
-    { value: 'No Disability Requirement', label: 'No Disability Requirement', count: 3173 },
-    { value: 'Any Disability (1%+)', label: 'Any Disability (1%+)', count: 446 },
-    { value: 'Mild Disability (1-39%)', label: 'Mild Disability (1-39%)', count: 23 },
-    { value: 'Moderate Disability (40-59%)', label: 'Moderate Disability (40-59%)', count: 127 },
-    { value: 'Severe Disability (60-79%)', label: 'Severe Disability (60-79%)', count: 104 },
-    { value: 'Very Severe Disability (80%+)', label: 'Very Severe Disability (80%+)', count: 47 }
-  ];
+  const disabilityPercentageOptions = useMemo(() => {
+    const disabilityCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const disability = scheme.filter_disability_percentage;
+      if (disability) {
+        disabilityCounts.set(disability, (disabilityCounts.get(disability) || 0) + 1);
+      }
+    });
+    
+    const options = Array.from(disabilityCounts.entries())
+      .map(([disability, count]) => ({ value: disability, label: disability, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
-  const categoryOptions = [
-    { value: 'All', label: 'All', count: 3809 },
-    { value: 'Science, IT & Communications', label: 'Science, IT & Communications', count: 11 },
-    { value: 'Travel & Tourism', label: 'Travel & Tourism', count: 1167 },
-    { value: 'Women and Child', label: 'Women and Child', count: 1440 },
-    { value: 'Business & Entrepreneurship', label: 'Business & Entrepreneurship', count: 91 },
-    { value: 'Social welfare & Empowerment', label: 'Social welfare & Empowerment', count: 184 },
-    { value: 'Public Safety,Law & Justice', label: 'Public Safety, Law & Justice', count: 210 },
-    { value: 'Transport & Infrastructure', label: 'Transport & Infrastructure', count: 106 },
-    { value: 'Banking,Financial Services and Insurance', label: 'Banking, Financial Services and Insurance', count: 170 },
-    { value: 'Housing & Shelter', label: 'Housing & Shelter', count: 163 },
-    { value: 'Sports & Culture', label: 'Sports & Culture', count: 83 },
-    { value: 'Health & Wellness', label: 'Health & Wellness', count: 66 },
-    { value: 'Utility & Sanitation', label: 'Utility & Sanitation', count: 5 },
-    { value: 'Agriculture,Rural & Environment', label: 'Agriculture, Rural & Environment', count: 57 },
-    { value: 'Skills & Employment', label: 'Skills & Employment', count: 50 },
-    { value: 'Education & Learning', label: 'Education & Learning', count: 6 }
-  ];
-
-  const FilterSection = ({ 
-    title, 
-    filterKey, 
-    options, 
-    showCount = 5 
-  }: { 
-    title: string; 
-    filterKey: string; 
-    options: string[]; 
-    showCount?: number; 
-  }) => {
-    const isExpanded = expandedSections[filterKey as keyof typeof expandedSections];
-    const displayOptions = isExpanded ? options : options.slice(0, showCount);
-    const hasMore = options.length > showCount;
-
-    return (
-      <div className="border-b border-gray-200 pb-4">
-        <button
-          onClick={() => toggleSection(filterKey)}
-          className="flex items-center justify-between w-full py-3 text-left"
-        >
-          <h3 className="font-semibold text-gray-900">{title}</h3>
-          {hasMore && (
-            isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />
-          )}
-        </button>
-        
-        <div className="space-y-2 mt-2">
-          {displayOptions.map((option) => {
-            const currentValues = filters[filterKey] || [];
-            const isChecked = currentValues.includes(option);
-            
-            return (
-              <label key={option} className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    handleFilterChange(filterKey, option, e.target.checked);
-                  }}
-                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">{option}</span>
-              </label>
-            );
-          })}
-        </div>
-        
-        {hasMore && !isExpanded && (
-          <button
-            onClick={() => toggleSection(filterKey)}
-            className="text-green-600 text-sm mt-2 hover:text-green-700"
-          >
-            Show more ({options.length - showCount})
-          </button>
-        )}
-      </div>
-    );
-  };
+  const categoryOptions = useMemo(() => {
+    const categoryCounts = new Map<string, number>();
+    schemes.forEach(scheme => {
+      const cats = scheme.filter_scheme_category || [];
+      cats.forEach(cat => {
+        categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
+      });
+    });
+    
+    const options = Array.from(categoryCounts.entries())
+      .map(([cat, count]) => ({ value: cat, label: cat, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    
+    return [{ value: 'All', label: 'All', count: schemes.length }, ...options];
+  }, []);
 
   const clearAllFilters = () => {
     onFiltersChange({
@@ -331,14 +384,124 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
 
       {/* Filter Sections */}
       <div className="space-y-6">
-        <FilterSection
-          title="State/UT"
-          filterKey="states"
-          options={filterOptions.state}
-          showCount={5}
-        />
+        {/* State/UT Section with counts */}
+        <div className="border-b border-gray-200 pb-4">
+          <button
+            onClick={() => toggleSection('state')}
+            className="flex items-center justify-between w-full py-3 text-left"
+          >
+            <h3 className="font-semibold text-gray-900">State/UT</h3>
+            {!expandedSections.state ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+          </button>
+          
+          <div className="space-y-2 mt-2">
+            {(expandedSections.state ? stateOptions : stateOptions.slice(0, 6)).map((option) => (
+              <label key={option.value} className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.states?.includes(option.value) || false}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleFilterChange('states', option.value, e.target.checked);
+                  }}
+                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">
+                  {option.label} ({option.count})
+                </span>
+              </label>
+            ))}
+          </div>
+          
+          {!expandedSections.state && stateOptions.length > 6 && (
+            <button
+              onClick={() => toggleSection('state')}
+              className="text-green-600 text-sm mt-2 hover:text-green-700"
+            >
+              Show more ({stateOptions.length - 6})
+            </button>
+          )}
+        </div>
 
-        {/* Special Gender Section with counts */}
+        {/* Category Section with counts */}
+        <div className="border-b border-gray-200 pb-4">
+          <button
+            onClick={() => toggleSection('category')}
+            className="flex items-center justify-between w-full py-3 text-left"
+          >
+            <h3 className="font-semibold text-gray-900">Category</h3>
+            {!expandedSections.category ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+          </button>
+          
+          <div className="space-y-2 mt-2">
+            {(expandedSections.category ? categoryOptions : categoryOptions.slice(0, 3)).map((option) => (
+              <label key={option.value} className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.categories?.includes(option.value) || false}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleFilterChange('categories', option.value, e.target.checked);
+                  }}
+                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">
+                  {option.label} ({option.count})
+                </span>
+              </label>
+            ))}
+          </div>
+          
+          {!expandedSections.category && categoryOptions.length > 3 && (
+            <button
+              onClick={() => toggleSection('category')}
+              className="text-green-600 text-sm mt-2 hover:text-green-700"
+            >
+              Show more ({categoryOptions.length - 3})
+            </button>
+          )}
+        </div>
+
+        {/* Ministry Section with counts */}
+        <div className="border-b border-gray-200 pb-4">
+          <button
+            onClick={() => toggleSection('ministry')}
+            className="flex items-center justify-between w-full py-3 text-left"
+          >
+            <h3 className="font-semibold text-gray-900">Ministry</h3>
+            {!expandedSections.ministry ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+          </button>
+          
+          <div className="space-y-2 mt-2">
+            {(expandedSections.ministry ? ministryOptions : ministryOptions.slice(0, 11)).map((option) => (
+              <label key={option.value} className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.ministry?.includes(option.value) || false}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleFilterChange('ministry', option.value, e.target.checked);
+                  }}
+                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">
+                  {option.label} ({option.count})
+                </span>
+              </label>
+            ))}
+          </div>
+          
+          {!expandedSections.ministry && ministryOptions.length > 11 && (
+            <button
+              onClick={() => toggleSection('ministry')}
+              className="text-green-600 text-sm mt-2 hover:text-green-700"
+            >
+              Show more ({ministryOptions.length - 11})
+            </button>
+          )}
+        </div>
+
+        {/* Gender Section with counts */}
         <div className="border-b border-gray-200 pb-4">
           <div className="flex items-center justify-between w-full py-3 text-left">
             <h3 className="font-semibold text-gray-900">Gender</h3>
@@ -364,7 +527,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
 
-        {/* Special Caste Section */}
+        {/* Caste Category Section */}
         <div className="border-b border-gray-200 pb-4">
           <div className="flex items-center justify-between w-full py-3 text-left">
             <h3 className="font-semibold text-gray-900">Caste Category</h3>
@@ -390,7 +553,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
 
-        {/* Special Residence Section with counts */}
+        {/* Residence Type Section with counts */}
         <div className="border-b border-gray-200 pb-4">
           <div className="flex items-center justify-between w-full py-3 text-left">
             <h3 className="font-semibold text-gray-900">Residence Type</h3>
@@ -416,7 +579,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
 
-        {/* Special Benefit Type Section with counts */}
+        {/* Benefit Type Section with counts */}
         <div className="border-b border-gray-200 pb-4">
           <div className="flex items-center justify-between w-full py-3 text-left">
             <h3 className="font-semibold text-gray-900">Benefit Type</h3>
@@ -442,14 +605,46 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
 
-        <FilterSection
-          title="Age Group"
-          filterKey="ageGroup"
-          options={filterOptions.ageGroup}
-          showCount={5}
-        />
+        {/* Age Group Section with counts */}
+        <div className="border-b border-gray-200 pb-4">
+          <button
+            onClick={() => toggleSection('ageGroup')}
+            className="flex items-center justify-between w-full py-3 text-left"
+          >
+            <h3 className="font-semibold text-gray-900">Age Group</h3>
+            {!expandedSections.ageGroup ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+          </button>
+          
+          <div className="space-y-2 mt-2">
+            {(expandedSections.ageGroup ? ageGroupOptions : ageGroupOptions.slice(0, 5)).map((option) => (
+              <label key={option.value} className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.ageGroup?.includes(option.value) || false}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleFilterChange('ageGroup', option.value, e.target.checked);
+                  }}
+                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">
+                  {option.label} ({option.count})
+                </span>
+              </label>
+            ))}
+          </div>
+          
+          {!expandedSections.ageGroup && ageGroupOptions.length > 5 && (
+            <button
+              onClick={() => toggleSection('ageGroup')}
+              className="text-green-600 text-sm mt-2 hover:text-green-700"
+            >
+              Show more ({ageGroupOptions.length - 5})
+            </button>
+          )}
+        </div>
 
-        {/* Special Marital Status Section */}
+        {/* Marital Status Section */}
         <div className="border-b border-gray-200 pb-4">
           <div className="flex items-center justify-between w-full py-3 text-left">
             <h3 className="font-semibold text-gray-900">Marital Status</h3>
@@ -475,7 +670,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
 
-        {/* Special Employment Status Section with counts */}
+        {/* Employment Status Section with counts */}
         <div className="border-b border-gray-200 pb-4">
           <div className="flex items-center justify-between w-full py-3 text-left">
             <h3 className="font-semibold text-gray-900">Employment Status</h3>
@@ -501,7 +696,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
 
-        {/* Special Occupation Section with counts */}
+        {/* Occupation Section with counts */}
         <div className="border-b border-gray-200 pb-4">
           <button
             onClick={() => toggleSection('occupation')}
@@ -579,7 +774,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           )}
         </div>
 
-        {/* Special Disability Percentage Section with counts - EXPANDABLE */}
+        {/* Disability Percentage Section with counts - EXPANDABLE */}
         <div className="border-b border-gray-200 pb-4">
           <button
             onClick={() => toggleSection('disabilityPercentage')}
@@ -617,52 +812,6 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
             </button>
           )}
         </div>
-
-        {/* Special Category Section with counts */}
-        <div className="border-b border-gray-200 pb-4">
-          <button
-            onClick={() => toggleSection('category')}
-            className="flex items-center justify-between w-full py-3 text-left"
-          >
-            <h3 className="font-semibold text-gray-900">Category</h3>
-            {!expandedSections.category ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-          </button>
-          
-          <div className="space-y-2 mt-2">
-            {(expandedSections.category ? categoryOptions : categoryOptions.slice(0, 3)).map((option) => (
-              <label key={option.value} className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filters.categories?.includes(option.value) || false}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    handleFilterChange('categories', option.value, e.target.checked);
-                  }}
-                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  {option.label} ({option.count})
-                </span>
-              </label>
-            ))}
-          </div>
-          
-          {!expandedSections.category && categoryOptions.length > 3 && (
-            <button
-              onClick={() => toggleSection('category')}
-              className="text-green-600 text-sm mt-2 hover:text-green-700"
-            >
-              Show more ({categoryOptions.length - 3})
-            </button>
-          )}
-        </div>
-
-        <FilterSection
-          title="Ministry"
-          filterKey="ministry"
-          options={filterOptions.ministry}
-          showCount={4}
-        />
       </div>
     </div>
   );

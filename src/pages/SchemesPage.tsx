@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
+import { Filter, X } from 'lucide-react';
 import { schemes } from '../data/schemes';
 import FilterSidebar from '../components/FilterSidebar';
 import SchemeCard from '../components/SchemeCard';
@@ -61,6 +62,39 @@ const useDebounce = (value: string, delay: number) => {
 export default function SchemesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  
+  // Debug: Log scheme data on mount
+  useEffect(() => {
+    console.log('=== SCHEMES DATA DEBUG ===');
+    console.log('Total schemes loaded:', schemes.length);
+    
+    // Check for MSME schemes
+    const msmeSchemes = schemes.filter(s => s.ministry === 'Ministry Of Micro, Small and Medium Enterprises');
+    console.log('MSME schemes found:', msmeSchemes.length);
+    if (msmeSchemes.length > 0) {
+      console.log('Sample MSME scheme:', {
+        title: msmeSchemes[0].title.substring(0, 50),
+        ministry: msmeSchemes[0].ministry
+      });
+    }
+    
+    // Check for Fisheries schemes
+    const fisheriesSchemes = schemes.filter(s => s.ministry === 'Ministry of Fisheries,Animal Husbandry and Dairying');
+    console.log('Fisheries schemes found:', fisheriesSchemes.length);
+    if (fisheriesSchemes.length > 0) {
+      console.log('Sample Fisheries scheme:', {
+        title: fisheriesSchemes[0].title.substring(0, 50),
+        ministry: fisheriesSchemes[0].ministry
+      });
+    }
+    
+    // Check for undefined/null ministries
+    const noMinistry = schemes.filter(s => !s.ministry);
+    console.log('Schemes without ministry:', noMinistry.length);
+    
+    console.log('=== END DEBUG ===');
+  }, []);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState(initialFilters);
 
@@ -71,75 +105,29 @@ export default function SchemesPage() {
 
   // Initialize filters from URL params
   useEffect(() => {
-    // Parse URL parameters
+    // Parse URL parameters - use || delimiter for categories (they contain commas)
     const categoriesParam = searchParams.get('categories');
     let categories: string[] = [];
     
     if (categoriesParam) {
-      // Handle encoded categories that might contain commas
-      if (categoriesParam.includes('||')) {
-        categories = categoriesParam.split('||').map(v => decodeURIComponent(v)).filter(Boolean);
-      } else {
-        // For single category with commas, check against known categories
-        const validCategories = [
-          'Science, IT & Communications',
-          'Travel & Tourism',
-          'Women and Child',
-          'Business & Entrepreneurship',
-          'Social welfare & Empowerment',
-          'Public Safety,Law & Justice',
-          'Transport & Infrastructure',
-          'Banking,Financial Services and Insurance',
-          'Housing & Shelter',
-          'Sports & Culture',
-          'Health & Wellness',
-          'Utility & Sanitation',
-          'Agriculture,Rural & Environment',
-          'Skills & Employment',
-          'Education & Learning'
-        ];
-        
-        // Check if it's a complete match for any valid category
-        if (validCategories.includes(categoriesParam)) {
-          categories = [categoriesParam];
-        } else {
-          categories = categoriesParam.split(',').filter(v => validCategories.includes(v.trim())).map(v => v.trim());
-        }
-      }
+      // Always use || delimiter for consistency (categories may contain commas)
+      categories = categoriesParam.split('||').map(v => decodeURIComponent(v)).filter(Boolean);
     } else if (searchParams.get('category')) {
       categories = [searchParams.get('category')!];
     }
     
-    const states = searchParams.get('states')?.split(',').filter(Boolean) || [];
+    const statesParam = searchParams.get('states');
+    console.log('URL states param:', statesParam);
+    const states = (statesParam?.split(',').filter(Boolean) || []).map(s => s.trim());
+    console.log('Parsed states:', states);
     const gender = searchParams.get('gender')?.split(',').filter(Boolean) || [];
     
-    // Simplified caste parsing - use exact values from your dataset
+    // Simplified caste parsing - use || delimiter consistently
     const casteParam = searchParams.get('caste');
     let caste: string[] = [];
     if (casteParam) {
-      if (casteParam.includes('||')) {
-        // Handle encoded format
-        caste = casteParam.split('||').map(v => decodeURIComponent(v)).filter(Boolean);
-      } else {
-        // Handle comma-separated format, but preserve full DNT name
-        const validCasteValues = [
-          'All',
-          'Scheduled Caste (SC)',
-          'Scheduled Tribe (ST)',
-          'General',
-          'Other Backward Class (OBC)',
-          'De-Notified, Nomadic, and Semi-Nomadic (DNT) communities',
-          'Particularly Vulnerable Tribal Group (PVTG)'
-        ];
-        
-        // If the param contains the full DNT name, use it as is
-        if (casteParam.includes('De-Notified, Nomadic, and Semi-Nomadic (DNT) communities')) {
-          caste = ['De-Notified, Nomadic, and Semi-Nomadic (DNT) communities'];
-        } else {
-          // For other values, split by comma
-          caste = casteParam.split(',').filter(v => validCasteValues.includes(v));
-        }
-      }
+      // Always use || delimiter for consistency
+      caste = casteParam.split('||').map(v => decodeURIComponent(v)).filter(Boolean);
     }
     
     const residence = searchParams.get('residence')?.split(',').filter(Boolean) || [];
@@ -151,7 +139,17 @@ export default function SchemesPage() {
     const disabilityPercentage = searchParams.get('disabilityPercentage')?.split(',').filter(Boolean) || [];
     const ageGroup = searchParams.get('ageGroup')?.split(',').filter(Boolean) || [];
     const searchQuery = searchParams.get('q') || '';
-    const ministry = searchParams.get('ministry')?.split(',').filter(Boolean) || [];
+    
+    // Ministry parsing - use || delimiter since ministry names contain commas
+    const ministryParam = searchParams.get('ministry');
+    let ministry: string[] = [];
+    if (ministryParam) {
+      if (ministryParam.includes('||')) {
+        ministry = ministryParam.split('||').map(v => decodeURIComponent(v)).filter(Boolean);
+      } else {
+        ministry = [decodeURIComponent(ministryParam)];
+      }
+    }
 
     setFilters({
       categories,
@@ -185,13 +183,13 @@ export default function SchemesPage() {
     
     console.log('Updated filters:', updatedFilters);
     
-    setFilters(updatedFilters);
+    // Only update URL params - let the useEffect handle state updates
     
     // Update URL params
     const params = new URLSearchParams();
     Object.entries(updatedFilters).forEach(([key, value]) => {
       if (Array.isArray(value) && value.length > 0) {
-        if (key === 'categories' || key === 'caste') {
+        if (key === 'categories' || key === 'caste' || key === 'ministry') {
           const encodedValues = value.map(v => encodeURIComponent(v));
           params.set(key, encodedValues.join('||'));
         } else {
@@ -225,13 +223,17 @@ export default function SchemesPage() {
     if (debouncedSearchQuery && debouncedSearchQuery.trim().length > 0) {
       const query = debouncedSearchQuery.toLowerCase().trim();
       filtered = filtered.filter(scheme => {
+        const categories = Array.isArray(scheme.filter_scheme_category) 
+          ? scheme.filter_scheme_category.join(' ') 
+          : (scheme.filter_scheme_category || '');
+        
         const searchableText = [
           scheme.title,
           scheme.details,
           scheme.benefits,
           scheme.ministry,
           scheme.classified_state,
-          scheme.filter_scheme_category
+          categories
         ].join(' ').toLowerCase();
         
         // Split query into words and check if all words are found
@@ -242,19 +244,20 @@ export default function SchemesPage() {
       console.log('Schemes after search filter:', filtered.length);
     }
 
-    // Category filter - FIXED to handle exact matching
+    // Category filter - Handle array of categories
     if (filters.categories && filters.categories.length > 0 && !filters.categories.includes('All')) {
       console.log('Filtering by categories:', filters.categories);
-      console.log('Sample scheme categories:', schemes.slice(0, 5).map(s => s.filter_scheme_category));
       
       const beforeCount = filtered.length;
       
       filtered = filtered.filter(scheme => {
-        const schemeCategory = scheme.filter_scheme_category;
-        const isMatch = filters.categories.some(category => {
-          // Exact string comparison - no trimming or case changes
-          return schemeCategory === category;
-        });
+        const schemeCategories = scheme.filter_scheme_category || [];
+        // Check if any of the scheme's categories match any of the filter categories
+        const isMatch = filters.categories.some(filterCategory => 
+          Array.isArray(schemeCategories) 
+            ? schemeCategories.includes(filterCategory)
+            : schemeCategories === filterCategory
+        );
         return isMatch;
       });
       
@@ -262,22 +265,22 @@ export default function SchemesPage() {
       console.log(`Category filter: ${beforeCount} -> ${afterCount} schemes`);
     }
 
-    // Caste filter - EXACT MATCHING ONLY
+    // Caste filter - Match schemes that include the selected caste values or "All"
     if (filters.caste && filters.caste.length > 0 && !filters.caste.includes('All')) {
       console.log('Filtering by caste:', filters.caste);
       
-      // Show sample scheme caste values for debugging
-      const sampleCasteValues = schemes.slice(0, 10).map(s => s.filter_caste);
-      console.log('Sample scheme caste values:', sampleCasteValues);
-      
       filtered = filtered.filter(scheme => {
-        const schemeCaste = scheme.filter_caste;
-        const matches = filters.caste.includes(schemeCaste);
+        const schemeCastes = scheme.filter_caste || [];
         
-        // Log the first few matches for debugging
-        if (matches && filtered.length < 5) {
-          console.log(`Match found: scheme "${scheme.title}" has caste "${schemeCaste}"`);
+        // If scheme has 'All', it's available to everyone - include it
+        if (schemeCastes.includes('All')) {
+          return true;
         }
+        
+        // Check if any of the selected castes match any of the scheme's castes
+        const matches = filters.caste.some(selectedCaste => 
+          schemeCastes.includes(selectedCaste)
+        );
         
         return matches;
       });
@@ -285,22 +288,52 @@ export default function SchemesPage() {
       console.log('Schemes after caste filter:', filtered.length);
     }
 
-    // State filter
+    // State filter - EXACT MATCHING ONLY
     if (filters.states && filters.states.length > 0 && !filters.states.includes('All')) {
-      filtered = filtered.filter(scheme => 
-        filters.states.some(state => 
-          scheme.classified_state?.toLowerCase().includes(state.toLowerCase())
-        )
-      );
+      console.log('===== STATE FILTER ACTIVE =====');
+      console.log('Filter states:', filters.states);
+      console.log('Sample scheme states:', schemes.slice(0, 5).map(s => s.classified_state));
+      const beforeCount = filtered.length;
+      
+      // Normalize state names - trim and lowercase for comparison
+      const normalizedStates = filters.states.map(s => s.trim().toLowerCase());
+      console.log('Normalized filter states:', normalizedStates);
+      
+      filtered = filtered.filter(scheme => {
+        const schemeState = (scheme.classified_state || '').trim().toLowerCase();
+        const matches = normalizedStates.some(state => schemeState === state);
+        return matches;
+      });
+      
+      const afterCount = filtered.length;
+      console.log(`State filter: ${beforeCount} -> ${afterCount} schemes`);
+      console.log('===== STATE FILTER COMPLETE =====');
+    } else {
+      console.log('State filter NOT active. filters.states:', filters.states, 'length:', filters.states?.length);
     }
 
     // Ministry filter
     if (filters.ministry && filters.ministry.length > 0 && !filters.ministry.includes('All')) {
-      filtered = filtered.filter(scheme => 
-        filters.ministry.some(ministry => 
-          scheme.ministry === ministry
-        )
-      );
+      console.log('Ministry filter active:', filters.ministry);
+      const beforeCount = filtered.length;
+      filtered = filtered.filter(scheme => {
+        const match = filters.ministry.some(ministry => {
+          const isMatch = scheme.ministry === ministry;
+          if (isMatch) {
+            console.log(`✓ Match found: "${scheme.title.substring(0, 40)}" has ministry "${scheme.ministry}"`);
+          }
+          return isMatch;
+        });
+        return match;
+      });
+      console.log(`Ministry filter: ${beforeCount} -> ${filtered.length} schemes`);
+      if (filtered.length === 0) {
+        console.warn('⚠️ NO SCHEMES MATCHED THE MINISTRY FILTER!');
+        console.log('Looking for ministries:', filters.ministry);
+        console.log('Sample scheme ministries from unfiltered:', 
+          schemes.slice(0, 5).map(s => ({ title: s.title.substring(0, 30), ministry: s.ministry }))
+        );
+      }
     }
 
     // Gender filter
@@ -330,7 +363,16 @@ export default function SchemesPage() {
 
     // Occupation filter
     if (filters.occupation.length > 0 && !filters.occupation.includes('All')) {
-      filtered = filtered.filter(scheme => filters.occupation.includes(scheme.filter_occupation));
+      console.log('Occupation filter active:', filters.occupation);
+      const beforeCount = filtered.length;
+      filtered = filtered.filter(scheme => {
+        const match = filters.occupation.includes(scheme.filter_occupation);
+        if (filters.occupation.includes('Artisans, Spinners & Weavers') && match) {
+          console.log('Artisan match found:', scheme.title, scheme.filter_occupation);
+        }
+        return match;
+      });
+      console.log(`Occupation filter: ${beforeCount} -> ${filtered.length} schemes`);
     }
 
     // Special Categories filter
@@ -420,10 +462,10 @@ export default function SchemesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white py-12">
+      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white py-8 md:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold mb-4">Government Schemes</h1>
-          <p className="text-xl text-green-50">
+          <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Government Schemes</h1>
+          <p className="text-base md:text-xl text-green-50">
             Showing {filteredSchemes.length} of {schemes.length} schemes
           </p>
         </div>
@@ -433,18 +475,61 @@ export default function SchemesPage() {
       {/* Age Tags section has been removed */}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        {/* Mobile Filter Button */}
+        <button
+          onClick={() => setIsFilterOpen(true)}
+          className="lg:hidden mb-4 w-full flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors"
+        >
+          <Filter size={20} />
+          Filters
+        </button>
+
         <div className="flex gap-8">
-          {/* Sidebar */}
-          <div className="w-80 flex-shrink-0">
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
             <FilterSidebar 
               filters={filters}
               onFiltersChange={handleFiltersChange}
             />
           </div>
 
+          {/* Mobile Filter Drawer */}
+          {isFilterOpen && (
+            <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsFilterOpen(false)}>
+              <div 
+                className="absolute inset-y-0 left-0 w-full sm:w-96 bg-white shadow-xl overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Filters</h2>
+                  <button
+                    onClick={() => setIsFilterOpen(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <FilterSidebar 
+                    filters={filters}
+                    onFiltersChange={handleFiltersChange}
+                  />
+                </div>
+                <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+                  <button
+                    onClick={() => setIsFilterOpen(false)}
+                    className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Results */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Search Bar */}
             <div className="mb-6">
               <div className="relative">
@@ -536,20 +621,60 @@ export default function SchemesPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center space-x-2">
+                  <div className="flex justify-center items-center space-x-2 my-8">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => {
+                        if (currentPage > 1) {
+                          setCurrentPage(currentPage - 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-2 rounded-lg ${
+                        currentPage === 1
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      ← Prev
+                    </button>
+
+                    {/* Page Numbers */}
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`px-4 py-2 rounded-lg ${
+                        onClick={() => {
+                          setCurrentPage(page);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`px-3 py-2 rounded-lg font-medium ${
                           currentPage === page
                             ? 'bg-green-600 text-white'
-                            : 'bg-white text-gray-700 hover:bg-gray-100'
+                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                         }`}
                       >
                         {page}
                       </button>
                     ))}
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => {
+                        if (currentPage < totalPages) {
+                          setCurrentPage(currentPage + 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-2 rounded-lg ${
+                        currentPage === totalPages
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Next →
+                    </button>
                   </div>
                 )}
               </>

@@ -5,9 +5,12 @@ import {
   Users, FileText, CheckCircle, AlertCircle, Heart 
 } from 'lucide-react';
 import { schemes } from '../data/schemes';
+import { useAuth } from '../contexts/AuthContext';
+import { useSavedSchemes } from '../contexts/SavedSchemesContext';
+import AuthModal from '../components/AuthModal';
 
 interface Scheme {
-  scheme_id?: number;
+  scheme_id: string;
   title: string;
   classified_state: string;
   ministry?: string;
@@ -17,7 +20,7 @@ interface Scheme {
   application_process?: string;
   documents_required?: string;
   exclusions?: string;
-  filter_scheme_category?: string;
+  filter_scheme_category?: string[];
   filter_benefit_type?: string;
   filter_gender?: string;
   filter_caste?: string;
@@ -30,6 +33,8 @@ interface Scheme {
   age_tags?: string[];
   sources_and_references?: string;
   faq?: FAQ[];
+  scheme_level?: string;
+  implementation_type?: string;
 }
 
 interface FAQ {
@@ -42,12 +47,19 @@ export default function SchemeDetailPage() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addSavedScheme, removeSavedScheme, savedSchemes } = useSavedSchemes();
   
   // Find scheme by scheme_id
   const scheme: Scheme | undefined = schemes.find(s => s.scheme_id?.toString() === id);
 
   // Add this to your component's state
   const [openFAQs, setOpenFAQs] = useState<Set<number>>(new Set());
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Check if scheme is saved
+  const isSaved = scheme ? savedSchemes.some(s => s.scheme_id === scheme.scheme_id) : false;
 
   // Add this function to toggle FAQs
   const toggleFAQ = (index: number) => {
@@ -58,6 +70,34 @@ export default function SchemeDetailPage() {
       newOpenFAQs.add(index);
     }
     setOpenFAQs(newOpenFAQs);
+  };
+
+  const handleSaveScheme = async () => {
+    console.log('=== SAVE SCHEME CLICKED ===');
+    console.log('User:', user);
+    console.log('Scheme:', scheme?.scheme_id);
+    
+    if (!user) {
+      console.log('No user, showing sign in prompt');
+      setShowSignIn(true);
+      return;
+    }
+
+    if (!scheme) return;
+
+    try {
+      if (isSaved) {
+        console.log('Removing scheme:', scheme.scheme_id);
+        await removeSavedScheme(scheme.scheme_id);
+        console.log('Scheme removed successfully');
+      } else {
+        console.log('Adding scheme:', scheme.scheme_id);
+        await addSavedScheme(scheme as any);
+        console.log('Scheme added successfully');
+      }
+    } catch (error) {
+      console.error('Error saving scheme:', error);
+    }
   };
 
   useEffect(() => {
@@ -129,15 +169,15 @@ export default function SchemeDetailPage() {
               <div className="flex gap-3 mb-4 flex-wrap">
                 <span className={`px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-100 to-blue-50 
                   text-blue-700 animate-gradient hover:shadow-md transition-shadow ${
-                  scheme.classified_state === 'Central/National' 
+                  scheme.classified_state === 'Central' 
                     ? 'bg-blue-100 text-blue-700' 
                     : 'bg-purple-100 text-purple-700'
                 }`}>
-                  {scheme.classified_state === 'Central/National' ? 'Central Scheme' : `${scheme.classified_state} State Scheme`}
+                  {scheme.classified_state === 'Central' ? 'Central Scheme' : `${scheme.classified_state} State Scheme`}
                 </span>
                 {scheme.filter_scheme_category && (
                   <span className="px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-700">
-                    {scheme.filter_scheme_category}
+                    {Array.isArray(scheme.filter_scheme_category) ? scheme.filter_scheme_category[0] : scheme.filter_scheme_category}
                   </span>
                 )}
                 {scheme.filter_benefit_type && (
@@ -160,16 +200,58 @@ export default function SchemeDetailPage() {
 
               {/* Action Buttons */}
               <div className="flex gap-4 flex-wrap">
-                <button className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 text-white font-semibold rounded-lg 
+                <button 
+                  type="button"
+                  onClick={() => {
+                    console.log('Check Eligibility clicked');
+                    navigate('/eligibility');
+                  }}
+                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 text-white font-semibold rounded-lg 
                   hover:from-green-700 hover:to-green-600 transition-all duration-200 shadow-lg 
                   hover:shadow-green-200 transform hover:-translate-y-0.5">
                   Check Eligibility
                 </button>
-                <button className="inline-flex items-center px-6 py-3 border-2 border-green-600 text-green-600 font-semibold rounded-lg hover:bg-green-50 transition-colors">
-                  <Heart className="mr-2" size={18} />
-                  Save Scheme
+                <button 
+                  type="button"
+                  onClick={handleSaveScheme}
+                  className={`inline-flex items-center px-6 py-3 font-semibold rounded-lg transition-all ${
+                    isSaved
+                      ? 'bg-red-100 text-red-600 border-2 border-red-600 hover:bg-red-200'
+                      : 'border-2 border-green-600 text-green-600 hover:bg-green-50'
+                  }`}>
+                  <Heart size={18} className={`mr-2 ${isSaved ? 'fill-current' : ''}`} />
+                  {isSaved ? 'Saved' : 'Save Scheme'}
                 </button>
               </div>
+
+              {showSignIn && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                  <div className="bg-white rounded-lg shadow-xl p-8 w-96 max-w-full mx-4">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Sign In Required</h2>
+                    <p className="text-gray-600 mb-6">You need to sign in to save schemes to your dashboard.</p>
+                    <button
+                      onClick={() => {
+                        setShowSignIn(false);
+                        setShowAuthModal(true);
+                      }}
+                      className="w-full px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-center mb-3"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      onClick={() => setShowSignIn(false)}
+                      className="w-full px-4 py-2 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <AuthModal 
+                isOpen={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+              />
             </div>
           </div>
         </div>
@@ -199,10 +281,12 @@ export default function SchemeDetailPage() {
               Details
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8"> {/* Updated grid layout */}
-              {scheme.filter_scheme_category && (
+              {scheme.filter_scheme_category && scheme.filter_scheme_category.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-2">Scheme Category</h3>
-                  <p className="text-gray-700">{scheme.filter_scheme_category}</p>
+                  <p className="text-gray-700">
+                    {Array.isArray(scheme.filter_scheme_category) ? scheme.filter_scheme_category[0] : scheme.filter_scheme_category}
+                  </p>
                 </div>
               )}
               {scheme.filter_benefit_type && (

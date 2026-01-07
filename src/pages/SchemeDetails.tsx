@@ -82,11 +82,11 @@ export default function SchemeDetails() {
             <div className="flex-1">
               <div className="flex gap-2 mb-3">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  scheme.classified_state === 'Central/National' 
+                  scheme.classified_state === 'Central' 
                     ? 'bg-blue-100 text-blue-700' 
                     : 'bg-purple-100 text-purple-700'
                 }`}>
-                  {scheme.classified_state === 'Central/National' ? 'Central' : 'State'}
+                  {scheme.classified_state === 'Central' ? 'Central' : 'State'}
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
                   {scheme.filter_scheme_category}
@@ -298,20 +298,6 @@ export default function SchemeDetails() {
           <div className="bg-gray-100 rounded-lg p-6">
             <h3 className="font-semibold text-gray-800 mb-2">Implementing Ministry</h3>
             <p className="text-gray-700">{scheme.ministry || 'Not Available'}</p>
-            
-            {scheme.url && (
-              <div className="mt-4">
-                <a
-                  href={scheme.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Apply Online
-                  <ArrowLeft className="ml-2 rotate-180" size={16} />
-                </a>
-              </div>
-            )}
           </div>
 
           {/* Occupation Selection */}

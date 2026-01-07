@@ -231,331 +231,242 @@ export default function EligibilityPage() {
   const eligibleSchemes = useMemo(() => {
     if (!showResults) return [];
 
-    return schemes.filter((scheme) => {
-      // If user is a student, ONLY show student-specific schemes
-      if (formData.isStudent === 'Yes') {
-        const schemeText = `${scheme.title} ${scheme.details || ''} ${scheme.benefits || ''}`.toLowerCase();
-        
-        // Only include schemes that are explicitly FOR students
-        const isDirectStudentScheme = 
-          // Direct scholarship/stipend schemes
-          schemeText.includes('scholarship') || 
-          schemeText.includes('stipend') ||
-          schemeText.includes('student loan') ||
-          schemeText.includes('education loan') ||
-          schemeText.includes('fee assistance') ||
-          schemeText.includes('tuition fee') ||
-          schemeText.includes('education grant') ||
-          schemeText.includes('educational assistance') ||
-          schemeText.includes('study assistance') ||
-          // Schemes specifically targeting students
-          schemeText.includes('for students') ||
-          schemeText.includes('to students') ||
-          schemeText.includes('student benefit') ||
-          schemeText.includes('student support') ||
-          schemeText.includes('student aid') ||
-          schemeText.includes('student welfare') ||
-          schemeText.includes('students pursuing') ||
-          // Pre/Post matric schemes
-          schemeText.includes('pre-matric') ||
-          schemeText.includes('post-matric') ||
-          schemeText.includes('pre matric') ||
-          schemeText.includes('post matric') ||
-          schemeText.includes('matric scholarship') ||
-          schemeText.includes('pre-metric') ||
-          schemeText.includes('post-metric') ||
-          // Merit-based student schemes
-          schemeText.includes('merit scholarship') ||
-          schemeText.includes('academic excellence') ||
-          schemeText.includes('topper') ||
-          schemeText.includes('meritorious students') ||
-          // Educational levels
-          schemeText.includes('school students') ||
-          schemeText.includes('college students') ||
-          schemeText.includes('university students') ||
-          schemeText.includes('undergraduate') ||
-          schemeText.includes('postgraduate') ||
-          schemeText.includes('graduate students') ||
-          schemeText.includes('doctoral') ||
-          schemeText.includes('phd students') ||
-          // Class-specific schemes
-          (schemeText.includes('class') && (schemeText.includes('1st') || schemeText.includes('2nd') || 
-           schemeText.includes('3rd') || schemeText.includes('4th') || schemeText.includes('5th') ||
-           schemeText.includes('6th') || schemeText.includes('7th') || schemeText.includes('8th') ||
-           schemeText.includes('9th') || schemeText.includes('10th') || schemeText.includes('11th') ||
-           schemeText.includes('12th') || schemeText.includes('i ') || schemeText.includes('ii ') ||
-           schemeText.includes('iii ') || schemeText.includes('iv ') || schemeText.includes('v ') ||
-           schemeText.includes('vi ') || schemeText.includes('vii ') || schemeText.includes('viii ') ||
-           schemeText.includes('ix ') || schemeText.includes('x ') || schemeText.includes('xi ') ||
-           schemeText.includes('xii '))) ||
-          // Student specific categories
-          (schemeText.includes('student') && (
-            schemeText.includes('class') || 
-            schemeText.includes('grade') ||
-            schemeText.includes('studying') ||
-            schemeText.includes('enrolled') ||
-            schemeText.includes('pursuing') ||
-            schemeText.includes('course') ||
-            schemeText.includes('education') ||
-            schemeText.includes('school') ||
-            schemeText.includes('college') ||
-            schemeText.includes('university') ||
-            schemeText.includes('academic')
-          )) ||
-          // Category-specific student schemes
-          (formData.caste && formData.caste !== 'General' && 
-           (schemeText.includes('backward class students') ||
-            schemeText.includes('sc students') ||
-            schemeText.includes('st students') ||
-            schemeText.includes('obc students') ||
-            schemeText.includes('scheduled caste students') ||
-            schemeText.includes('scheduled tribe students') ||
-            schemeText.includes('minority students'))) ||
-          // Gender-specific student schemes
-          (formData.gender === 'Female' && 
-           (schemeText.includes('girl students') ||
-            schemeText.includes('female students') ||
-            schemeText.includes('women students') ||
-            schemeText.includes('girl child education')));
-        
-        // Exclude schemes that are clearly NOT for students
-        const isInstitutionalScheme = 
-          schemeText.includes('institution establishment') ||
-          schemeText.includes('faculty recruitment') ||
-          schemeText.includes('teacher training') ||
-          schemeText.includes('college establishment') ||
-          schemeText.includes('university grant') ||
-          (schemeText.includes('infrastructure') && !schemeText.includes('student')) ||
-          schemeText.includes('equipment purchase') ||
-          schemeText.includes('building construction') ||
-          schemeText.includes('laboratory setup');
-          
-        const isBusinessScheme = 
-          schemeText.includes('msme') ||
-          (schemeText.includes('startup') && !schemeText.includes('student startup')) ||
-          schemeText.includes('tender') ||
-          schemeText.includes('marketing assistance') ||
-          (schemeText.includes('loan') && !schemeText.includes('education loan') && !schemeText.includes('student loan'));
-        
-        const isEmploymentScheme = 
-          schemeText.includes('job guarantee') ||
-          schemeText.includes('employment generation') ||
-          schemeText.includes('skill development') && !schemeText.includes('student') ||
-          schemeText.includes('vocational training') && !schemeText.includes('student');
-        
-        // For students, ONLY return true if it's a direct student scheme and NOT institutional/business/employment
-        return isDirectStudentScheme && !isInstitutionalScheme && !isBusinessScheme && !isEmploymentScheme;
-      }
+    console.log('======= ELIGIBILITY CHECK START =======');
+    console.log('User Profile:', {
+      gender: formData.gender,
+      age: formData.age,
+      maritalStatus: formData.maritalStatus,
+      state: formData.state,
+      residenceType: formData.residenceType,
+      caste: formData.caste,
+      isStudent: formData.isStudent
+    });
 
-      // For non-students, use filtering based on form data and scheme filters
-      let isEligible = false;
-      let hasRelevantCriteria = false;
-
-      // Use the filter fields from your scheme data structure
-      // Gender matching
-      if (formData.gender && scheme.filter_gender) {
-        hasRelevantCriteria = true;
-        if (scheme.filter_gender === 'All' || scheme.filter_gender === formData.gender) {
-          isEligible = true;
-        } else {
-          return false; // Must match gender if specified
-        }
-      }
-
-      // Age matching using age_tags
-      if (formData.age && scheme.age_tags && Array.isArray(scheme.age_tags)) {
-        const userAge = parseInt(formData.age);
-        hasRelevantCriteria = true;
-        
-        // Check if user's age falls within any of the scheme's age tags
-        const matchesAgeTag = scheme.age_tags.some(ageTag => {
-          if (ageTag === 'All Ages') return true;
-          
-          const [min, max] = ageTag.split('-').map(n => parseInt(n));
-          if (!isNaN(min) && !isNaN(max)) {
-            return userAge >= min && userAge <= max;
-          }
+    const filtered = schemes.filter((scheme) => {
+      // Track if scheme has at least one specific targeting criterion
+      let hasSpecificMatch = false;
+      
+      // 1. GENDER - Must match if scheme specifies gender
+      const schemeGender = scheme.filter_gender?.trim();
+      if (schemeGender && schemeGender !== '' && schemeGender !== 'All') {
+        if (schemeGender !== formData.gender) {
           return false;
-        });
+        }
+        hasSpecificMatch = true; // Scheme specifically targets this gender
+      }
+
+      // 2. STATE - Must match if scheme is for specific state
+      const schemeState = scheme.classified_state?.trim();
+      if (schemeState && schemeState !== '' && schemeState !== 'Central' && schemeState !== 'All India') {
+        if (schemeState !== formData.state) {
+          return false;
+        }
+        hasSpecificMatch = true; // Scheme specifically targets this state
+      }
+
+      // 3. CASTE - Must match if scheme specifies caste (filter_caste is an array)
+      if (scheme.filter_caste && Array.isArray(scheme.filter_caste) && scheme.filter_caste.length > 0) {
+        const castes = scheme.filter_caste.map(c => c.trim());
+        if (!castes.includes('All') && !castes.includes(formData.caste)) {
+          return false;
+        }
+        if (!castes.includes('All')) {
+          hasSpecificMatch = true; // Scheme specifically targets this caste
+        }
+      }
+
+      // 4. RESIDENCE - Must match if scheme specifies residence type
+      const schemeResidence = scheme.filter_residence?.trim();
+      if (schemeResidence && schemeResidence !== '' && schemeResidence !== 'All') {
+        if (schemeResidence !== formData.residenceType) {
+          return false;
+        }
+        hasSpecificMatch = true; // Scheme specifically targets this residence type
+      }
+
+      // 5. MARITAL STATUS - Must match if scheme specifies marital status
+      const schemeMarital = scheme.filter_marital_status?.trim();
+      if (schemeMarital && schemeMarital !== '' && schemeMarital !== 'All') {
+        if (schemeMarital !== formData.maritalStatus) {
+          return false;
+        }
+        hasSpecificMatch = true; // Scheme specifically targets this marital status
+      }
+
+      // 6. AGE - Must be within range if scheme specifies age
+      if (formData.age && scheme.age_tags && Array.isArray(scheme.age_tags) && scheme.age_tags.length > 0) {
+        const userAge = parseInt(formData.age);
+        const hasAllAges = scheme.age_tags.some(tag => tag === 'All Ages' || tag === 'All');
         
-        if (matchesAgeTag) {
-          isEligible = true;
-        }
-      }
-
-      // State matching
-      if (formData.state && scheme.classified_state) {
-        hasRelevantCriteria = true;
-        if (scheme.classified_state === 'All India' || 
-            scheme.classified_state === 'Central' || 
-            scheme.classified_state === formData.state) {
-          isEligible = true;
-        }
-      }
-
-      // Caste matching
-      if (formData.caste && scheme.filter_caste) {
-        hasRelevantCriteria = true;
-        if (scheme.filter_caste === 'All' || scheme.filter_caste === formData.caste) {
-          isEligible = true;
-        } else {
-          return false; // Must match caste if specified
-        }
-      }
-
-      // Residence matching
-      if (formData.residenceType && scheme.filter_residence) {
-        hasRelevantCriteria = true;
-        if (scheme.filter_residence === 'All' || scheme.filter_residence === formData.residenceType) {
-          isEligible = true;
-        }
-      }
-
-      // Employment status matching
-      if (formData.employmentStatus && scheme.filter_employment_status) {
-        hasRelevantCriteria = true;
-        if (scheme.filter_employment_status === 'All' || scheme.filter_employment_status === formData.employmentStatus) {
-          isEligible = true;
-        }
-      }
-
-      // Occupation matching
-      if (formData.occupation && scheme.filter_occupation) {
-        hasRelevantCriteria = true;
-        if (scheme.filter_occupation === 'No' || scheme.filter_occupation === formData.occupation) {
-          isEligible = true;
-        }
-      }
-
-      // Disability matching
-      if (formData.hasDisability === 'Yes' && formData.disabilityPercentage && scheme.filter_disability_percentage) {
-        hasRelevantCriteria = true;
-        const userDisabilityPercent = parseInt(formData.disabilityPercentage);
-        
-        // If scheme has no disability requirement, still eligible
-        if (scheme.filter_disability_percentage === 'No Disability Requirement') {
-          isEligible = true;
-        } else {
-          // Extract numeric requirement from scheme (e.g., "40% and above" -> 40)
-          const schemeRequirement = parseInt(scheme.filter_disability_percentage);
-          if (!isNaN(schemeRequirement) && userDisabilityPercent >= schemeRequirement) {
-            isEligible = true;
+        if (!hasAllAges) {
+          const ageMatches = scheme.age_tags.some(ageTag => {
+            const parts = ageTag.split('-');
+            if (parts.length === 2) {
+              const min = parseInt(parts[0]);
+              const max = parseInt(parts[1]);
+              if (!isNaN(min) && !isNaN(max)) {
+                return userAge >= min && userAge <= max;
+              }
+            }
+            return false;
+          });
+          
+          if (!ageMatches) {
+            return false;
           }
         }
       }
 
-      // Special categories matching (BPL, etc.)
-      if (formData.isBPL === 'Yes' && scheme.filter_special_categories) {
-        hasRelevantCriteria = true;
-        const specialCategories = Array.isArray(scheme.filter_special_categories) 
+      // 7. EMPLOYMENT - Must match if scheme specifies employment status
+      if (formData.employmentStatus) {
+        const schemeEmployment = scheme.filter_employment_status?.trim();
+        if (schemeEmployment && schemeEmployment !== '' && schemeEmployment !== 'All') {
+          if (schemeEmployment !== formData.employmentStatus) {
+            return false;
+          }
+        }
+      }
+
+      // 8. OCCUPATION - Must match if scheme specifies occupation
+      if (formData.occupation) {
+        const schemeOccupation = scheme.filter_occupation?.trim();
+        if (schemeOccupation && schemeOccupation !== '' && schemeOccupation !== 'No' && schemeOccupation !== 'All') {
+          if (schemeOccupation !== formData.occupation) {
+            return false;
+          }
+        }
+      }
+
+      // 9. DISABILITY - Must match if scheme requires disability
+      const schemeDisability = scheme.filter_disability_percentage?.trim();
+      if (schemeDisability && schemeDisability !== '' && schemeDisability !== 'No Disability Requirement') {
+        if (formData.hasDisability !== 'Yes') {
+          return false;
+        }
+        if (formData.disabilityPercentage) {
+          const userPercent = parseInt(formData.disabilityPercentage);
+          const requiredPercent = parseInt(schemeDisability);
+          if (!isNaN(requiredPercent) && userPercent < requiredPercent) {
+            return false;
+          }
+        }
+      }
+
+      // 10. SPECIAL CATEGORIES - Must match if required
+      if (scheme.filter_special_categories) {
+        const categories = Array.isArray(scheme.filter_special_categories) 
           ? scheme.filter_special_categories 
           : [scheme.filter_special_categories];
         
-        if (specialCategories.includes('Below Poverty Line') || specialCategories.includes('BPL')) {
-          isEligible = true;
+        const needsBPL = categories.some(cat => cat && (cat === 'Below Poverty Line' || cat === 'BPL' || cat.toLowerCase().includes('bpl')));
+        if (needsBPL && formData.isBPL !== 'Yes') {
+          return false;
+        }
+
+        const needsMinority = categories.some(cat => cat && cat.toLowerCase().includes('minority'));
+        if (needsMinority && formData.isMinority !== 'Yes') {
+          return false;
+        }
+
+        const needsFarmer = categories.some(cat => cat && (cat.toLowerCase().includes('farmer') || cat.toLowerCase().includes('agriculture')));
+        if (needsFarmer && formData.ownsAgriLand !== 'Yes') {
+          return false;
         }
       }
 
-      // Text-based matching for additional context
-      const schemeText = `${scheme.title} ${scheme.details || ''} ${scheme.benefits || ''}`.toLowerCase();
-
-      // Gender-specific schemes (text-based)
-      if (formData.gender === 'Female') {
-        if (schemeText.includes('women') || schemeText.includes('girl') || 
-            schemeText.includes('female') || schemeText.includes('mother') ||
-            schemeText.includes('maternity') || schemeText.includes('lady')) {
-          hasRelevantCriteria = true;
-          isEligible = true;
-        }
+      // 11. STUDENT FILTERING - Strict separation
+      const schemeText = `${scheme.title || ''} ${scheme.details || ''} ${scheme.benefits || ''}`.toLowerCase();
+      
+      // 12. EXCLUDE INSTITUTIONAL/ORGANIZATIONAL SCHEMES - These are for organizations/institutions, not individuals
+      const isInstitutionalScheme = 
+        // Educational institutions
+        schemeText.includes('institution establishment') ||
+        schemeText.includes('financial assistance to institutions') ||
+        schemeText.includes('grant for augmenting infrastructure') ||
+        schemeText.includes('infrastructure development') ||
+        schemeText.includes('establishment of') ||
+        schemeText.includes('setting up of') ||
+        schemeText.includes('college establishment') ||
+        schemeText.includes('university grant') ||
+        schemeText.includes('faculty recruitment') ||
+        schemeText.includes('laboratory setup') ||
+        schemeText.includes('building construction') ||
+        schemeText.includes('equipment purchase') ||
+        schemeText.includes('campus development') ||
+        schemeText.includes('hostel construction') ||
+        (schemeText.includes('infrastructure') && !schemeText.includes('individual')) ||
+        (schemeText.includes('institution') && !schemeText.includes('student')) ||
+        schemeText.includes('capacity building for institutions') ||
+        schemeText.includes('strengthening of institutions') ||
+        // Business/Industry/Organization schemes
+        schemeText.includes('industries') ||
+        schemeText.includes('industrial technology') ||
+        schemeText.includes('r&d units') ||
+        schemeText.includes('research and academic institutions') ||
+        schemeText.includes('in-house r&d') ||
+        schemeText.includes('scientific & industrial research') ||
+        schemeText.includes('industry associations') ||
+        schemeText.includes('techno-entrepreneurs') ||
+        schemeText.includes('government departments') ||
+        schemeText.includes('technology development and dissemination') ||
+        schemeText.includes('disseminate science') ||
+        schemeText.includes('consultants') ||
+        schemeText.includes('industrial research') ||
+        schemeText.includes('technology transfer') ||
+        schemeText.includes('for industries') ||
+        schemeText.includes('to industries') ||
+        (schemeText.includes('msme') && !schemeText.includes('loan')) ||
+        (schemeText.includes('sme') && !schemeText.includes('loan')) ||
+        schemeText.includes('cluster development') ||
+        schemeText.includes('business incubation') ||
+        schemeText.includes('industry cluster');
+      
+      if (isInstitutionalScheme) {
+        return false; // Exclude schemes meant for institutions/organizations, not individuals
       }
       
-      // BPL schemes (text-based)
-      if (formData.isBPL === 'Yes') {
-        if (schemeText.includes('bpl') || schemeText.includes('below poverty') ||
-            schemeText.includes('poor') || schemeText.includes('economically weak')) {
-          hasRelevantCriteria = true;
-          isEligible = true;
+      const isStudentScheme = 
+        schemeText.includes('scholarship') || 
+        schemeText.includes('stipend') ||
+        schemeText.includes('student') ||
+        schemeText.includes('education loan') ||
+        schemeText.includes('fee assistance') ||
+        schemeText.includes('tuition') ||
+        schemeText.includes('pre-matric') ||
+        schemeText.includes('post-matric') ||
+        schemeText.includes('merit scholarship');
+
+      if (formData.isStudent === 'Yes') {
+        // User is student - only show student schemes
+        if (!isStudentScheme) {
+          return false;
         }
-      }
-      
-      // Disability schemes (text-based)
-      if (formData.hasDisability === 'Yes') {
-        if (schemeText.includes('disability') || schemeText.includes('disabled') ||
-            schemeText.includes('handicapped') || schemeText.includes('divyang') ||
-            schemeText.includes('specially abled')) {
-          hasRelevantCriteria = true;
-          isEligible = true;
-        }
-      }
-      
-      // Rural/Urban schemes (text-based)
-      if (formData.residenceType === 'Rural') {
-        if (schemeText.includes('rural') || schemeText.includes('village') ||
-            schemeText.includes('farmer') || schemeText.includes('agriculture')) {
-          hasRelevantCriteria = true;
-          isEligible = true;
-        }
-      } else if (formData.residenceType === 'Urban') {
-        if (schemeText.includes('urban') || schemeText.includes('city') ||
-            schemeText.includes('metropolitan')) {
-          hasRelevantCriteria = true;
-          isEligible = true;
-        }
-      }
-      
-      // Age-based schemes (text-based)
-      if (formData.age) {
-        const age = parseInt(formData.age);
-        if (age <= 25 && (schemeText.includes('youth') || schemeText.includes('young') ||
-                          schemeText.includes('adolescent') || schemeText.includes('teenager'))) {
-          hasRelevantCriteria = true;
-          isEligible = true;
-        }
-        if (age >= 60 && (schemeText.includes('elderly') || schemeText.includes('senior') ||
-                          schemeText.includes('old age') || schemeText.includes('pension'))) {
-          hasRelevantCriteria = true;
-          isEligible = true;
+      } else if (formData.isStudent === 'No') {
+        // User is not student - exclude student schemes
+        if (isStudentScheme) {
+          return false;
         }
       }
 
-      // Minority schemes (only if not disabled, as per requirement)
-      if (formData.hasDisability !== 'Yes' && formData.isMinority === 'Yes') {
-        if (schemeText.includes('minority') || schemeText.includes('muslim') ||
-            schemeText.includes('christian') || schemeText.includes('sikh') ||
-            schemeText.includes('buddhist') || schemeText.includes('parsi')) {
-          hasRelevantCriteria = true;
-          isEligible = true;
-        }
+      // RELEVANCE CHECK: Scheme must have at least ONE specific targeting criterion
+      // This filters out overly generic schemes that target everyone (All + All + All...)
+      if (!hasSpecificMatch) {
+        return false; // Scheme is too generic - not specifically targeted at user's profile
       }
 
-      // Employment-based schemes (text-based)
-      if (formData.employmentStatus === 'Unemployed') {
-        if (schemeText.includes('unemployed') || schemeText.includes('job') ||
-            schemeText.includes('employment') || schemeText.includes('skill development')) {
-          hasRelevantCriteria = true;
-          isEligible = true;
-        }
-      } else if (formData.employmentStatus === 'Self-Employed/ Entrepreneur') {
-        if (schemeText.includes('self employed') || schemeText.includes('entrepreneur') ||
-            schemeText.includes('business') || schemeText.includes('msme')) {
-          hasRelevantCriteria = true;
-          isEligible = true;
-        }
-      }
-
-      // Agriculture-based schemes (text-based)
-      if (formData.ownsAgriLand === 'Yes') {
-        if (schemeText.includes('farmer') || schemeText.includes('agriculture') ||
-            schemeText.includes('farming') || schemeText.includes('crop') ||
-            schemeText.includes('agricultural') || schemeText.includes('kisan')) {
-          hasRelevantCriteria = true;
-          isEligible = true;
-        }
-      }
-
-      // Only include schemes that have relevant criteria and user meets them
-      return hasRelevantCriteria && isEligible;
+      return true;
     });
+
+    console.log(`Total schemes: ${schemes.length}, Eligible: ${filtered.length}`);
+    console.log('Sample eligible schemes (first 10):');
+    filtered.slice(0, 10).forEach((s, i) => {
+      console.log(`${i+1}. ${s.title}`);
+      console.log(`   Gender: ${s.filter_gender || 'undefined'}, State: ${s.classified_state || 'undefined'}, Caste: ${s.filter_caste || 'undefined'}`);
+      console.log(`   Residence: ${s.filter_residence || 'undefined'}, Marital: ${s.filter_marital_status || 'undefined'}`);
+    });
+    console.log('======= END =======');
+
+    return filtered;
   }, [formData, showResults]);
 
   const nextStep = () => {
@@ -1073,55 +984,57 @@ export default function EligibilityPage() {
           {/* Results List */}
           {eligibleSchemes.length > 0 ? (
             <div className="space-y-6">
-              {eligibleSchemes.map((scheme) => (
-                <div key={scheme.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          scheme.classified_state === 'Central' || scheme.classified_state === 'All India' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                        }`}>
-                          {scheme.classified_state === 'Central' || scheme.classified_state === 'All India' ? 'Central' : 'State'}
-                        </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                          {scheme.filter_scheme_category}
-                        </span>
+              {eligibleSchemes.map((scheme) => {
+                // Truncate description to max 8 lines (500 chars approximately)
+                const textToDisplay = scheme.details.replace(/\n/g, ' ');
+                const maxLength = 500;
+                const truncatedDetails = textToDisplay.length > maxLength ? textToDisplay.substring(0, maxLength) : textToDisplay;
+                const isDescriptionTruncated = textToDisplay.length > maxLength;
+                
+                return (
+                  <div key={scheme.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            scheme.classified_state === 'Central' || scheme.classified_state === 'All India' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {scheme.classified_state === 'Central' || scheme.classified_state === 'All India' ? 'Central' : 'State'}
+                          </span>
+                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                            {Array.isArray(scheme.filter_scheme_category) ? scheme.filter_scheme_category[0] : scheme.filter_scheme_category}
+                          </span>
+                        </div>
+                        <CheckCircle className="text-green-500" size={24} />
                       </div>
-                      <CheckCircle className="text-green-500" size={24} />
-                    </div>
 
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">{scheme.title}</h3>
-                    <p className="text-gray-600 mb-4">{scheme.details}</p>
-
-                    <div className="mb-4">
-                      <h4 className="font-semibold text-gray-800 mb-2">Key Benefits:</h4>
-                      <div className="text-sm text-gray-600 flex items-start gap-2">
-                        <span className="text-green-600 mt-1">•</span>
-                        <span>{scheme.benefits}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
                       <Link
                         to={`/scheme/${scheme.id}`}
                         state={{ from: `${location.pathname}${location.search}` }}
                         onClick={handleSchemeClick}
-                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                        className="text-xl font-bold text-green-600 hover:text-green-700 transition-colors mb-2 inline-block"
                       >
-                        View Details
+                        {scheme.title}
                       </Link>
-                      <a
-                        href={scheme.url || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-6 py-2 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-colors font-semibold"
-                      >
-                        Apply Now
-                      </a>
+                      <p className="text-gray-600 mb-4 line-clamp-6">
+                        {truncatedDetails}
+                        {isDescriptionTruncated && '...'}
+                      </p>
+
+                      <div className="flex gap-4">
+                        <Link
+                          to={`/scheme/${scheme.id}`}
+                          state={{ from: `${location.pathname}${location.search}` }}
+                          onClick={handleSchemeClick}
+                          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                        >
+                          View Details
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-lg p-12 text-center">

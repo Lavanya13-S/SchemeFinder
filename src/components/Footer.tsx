@@ -1,4 +1,5 @@
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -6,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="bg-gray-800 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
+        <div className="grid md:grid-cols-3 gap-8 mb-8">
           {/* About Section */}
           <div>
             <h3 className="text-white font-bold text-lg mb-4">SchemeFinder</h3>
@@ -33,23 +34,11 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-bold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">Home</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">All Schemes</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Help</a></li>
-            </ul>
-          </div>
-
-          {/* Resources */}
-          <div>
-            <h3 className="text-white font-bold text-lg mb-4">Resources</h3>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">Terms & Conditions</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Accessibility</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Sitemap</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">FAQs</a></li>
+              <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
+              <li><Link to="/schemes" className="hover:text-white transition-colors">Browse Schemes</Link></li>
+              <li><Link to="/states" className="hover:text-white transition-colors">States</Link></li>
+              <li><Link to="/ministries" className="hover:text-white transition-colors">Ministries</Link></li>
+              <li><Link to="/eligibility" className="hover:text-white transition-colors">Check Eligibility</Link></li>
             </ul>
           </div>
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Search, User, LogOut } from 'lucide-react';
+import { Menu, X, Search, User, LogOut, Heart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './AuthModal';
 
@@ -92,6 +92,19 @@ export default function Navbar() {
 
             {/* Right side - Auth button */}
             <div className="flex items-center space-x-4">
+              {user && (
+                <Link
+                  to="/saved-schemes"
+                  className={`p-2 rounded-lg transition-colors ${
+                    isActive('/saved-schemes') 
+                      ? 'text-red-600 bg-red-50' 
+                      : 'text-gray-700 hover:text-red-600 hover:bg-red-50'
+                  }`}
+                  title="Saved Schemes"
+                >
+                  <Heart size={20} fill={isActive('/saved-schemes') ? 'currentColor' : 'none'} />
+                </Link>
+              )}
               {user ? (
                 <div className="relative group">
                   <button className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-green-600 hover:bg-gray-50">
@@ -168,6 +181,15 @@ export default function Navbar() {
                 >
                   Check Eligibility
                 </Link>
+                {user && (
+                  <Link
+                    to="/saved-schemes"
+                    className="block px-3 py-2 rounded-md textbase font-medium text-gray-700 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    My Saved Schemes
+                  </Link>
+                )}
                 {!user && (
                   <button
                     onClick={() => {

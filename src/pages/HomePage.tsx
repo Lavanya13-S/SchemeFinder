@@ -13,7 +13,10 @@ import {
   Award, 
   Baby,
   MapPin,
-  Building
+  Building,
+  ClipboardList,
+  Sparkles,
+  Send
 } from 'lucide-react';
 import { schemes } from '../data/schemes';
 
@@ -78,27 +81,24 @@ export default function HomePage() {
     }
   };
 
-  // Get recent/featured schemes for display
-  const featuredSchemes = schemes.slice(0, 3);
-
   // Category data with counts
   const categoryData = [
-    { name: 'Agriculture,Rural & Environment', displayCount: '581 schemes' },
-    { name: 'Banking,Financial Services and Insurance', displayCount: '540 schemes' },
-    { name: 'Business & Entrepreneurship', displayCount: '212 schemes' },
-    { name: 'Education & Learning', displayCount: '1109 schemes' },
-    { name: 'Health & Wellness', displayCount: '154 schemes' },
-    { name: 'Housing & Shelter', displayCount: '30 schemes' },
-    { name: 'Skills & Employment', displayCount: '241 schemes' },
-    { name: 'Social welfare & Empowerment', displayCount: '471 schemes' },
-    { name: 'Women and Child', displayCount: '471 schemes' }
+    { name: 'Agriculture,Rural & Environment', displayCount: '818 schemes' },
+    { name: 'Banking,Financial Services and Insurance', displayCount: '318 schemes' },
+    { name: 'Business & Entrepreneurship', displayCount: '705 schemes' },
+    { name: 'Education & Learning', displayCount: '1078 schemes' },
+    { name: 'Health & Wellness', displayCount: '274 schemes' },
+    { name: 'Housing & Shelter', displayCount: '128 schemes' },
+    { name: 'Skills & Employment', displayCount: '368 schemes' },
+    { name: 'Social welfare & Empowerment', displayCount: '2010 schemes' },
+    { name: 'Women and Child', displayCount: '458 schemes' }
   ];
 
   // Get states data (showing first 6 in alphabetical order)
   const allStates = [...new Set(schemes.map(s => s.classified_state))];
   const validStates = allStates.filter((state): state is string => 
     state != null && 
-    state !== 'Central/National' && 
+    state !== 'Central' && 
     state !== 'All States' &&
     state.trim().length > 0
   ).sort();
@@ -337,20 +337,20 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold text-blue-500 mb-2">3,809</div>
+              <div className="text-4xl font-bold text-blue-500 mb-2">4,242</div>
               <div className="text-gray-600 text-lg font-medium">Total Schemes</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-green-500 mb-2">3,809</div>
+              <div className="text-4xl font-bold text-green-500 mb-2">564</div>
               <div className="text-gray-600 text-lg font-medium">Central Schemes</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-purple-500 mb-2">9</div>
+              <div className="text-4xl font-bold text-purple-500 mb-2">15</div>
               <div className="text-gray-600 text-lg font-medium">Categories</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-orange-500 mb-2">3,809</div>
-              <div className="text-gray-600 text-lg font-medium">Active Programs</div>
+              <div className="text-4xl font-bold text-orange-500 mb-2">37</div>
+              <div className="text-gray-600 text-lg font-medium">States & UTs</div>
             </div>
           </div>
         </div>
@@ -420,50 +420,82 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Featured Schemes Section */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {featuredSchemes.map((scheme, index) => (
-            <div key={scheme.scheme_id || index} className="bg-white rounded-lg shadow-md border p-6 hover:shadow-lg transition-shadow">
-              <div className="flex gap-2 mb-3">
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                  Central
-                </span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                  Education
-                </span>
-              </div>
-              
-              <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2">
-                {scheme.title}
-              </h3>
-              
-              <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                {scheme.details && scheme.details.length > 150 
-                  ? scheme.details.substring(0, 150) + '...' 
-                  : scheme.details || 'No description available'}
-              </p>
-              
-              <Link
-                to={`/schemes/${scheme.scheme_id}`}
-                className="inline-flex items-center text-green-600 hover:text-green-700 font-medium text-sm"
-              >
-                Learn More
-                <ArrowRight className="ml-1" size={16} />
-              </Link>
-            </div>
-          ))}
-        </div>
+      {/* How It Works Section */}
+      <div className="py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              How it works
+            </h2>
+            <p className="text-xl text-gray-600">
+              Easy steps to apply for Government Schemes
+            </p>
+          </div>
 
-        {/* View All Schemes Button */}
-        <div className="text-center">
-          <Link
-            to="/schemes"
-            className="inline-flex items-center bg-green-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-green-700 transition-colors shadow-lg"
-          >
-            View All Schemes
-            <ArrowRight className="ml-2" size={18} />
-          </Link>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Card 1: Enter Details */}
+            <div className="group relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-8 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-105 border-2 border-blue-200">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              
+              <div className="relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <ClipboardList className="text-white" size={32} />
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  Step 1
+                </h3>
+                <h4 className="text-xl font-semibold text-blue-700 mb-4">
+                  Enter Details
+                </h4>
+                <p className="text-gray-700 text-base leading-relaxed font-medium">
+                  Start by entering your basic information, age, income, and personal details to help us identify the most relevant schemes for your profile.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 2: Search */}
+            <div className="group relative bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-8 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-105 border-2 border-green-200">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              
+              <div className="relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Sparkles className="text-white" size={32} />
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  Step 2
+                </h3>
+                <h4 className="text-xl font-semibold text-green-700 mb-4">
+                  Search
+                </h4>
+                <p className="text-gray-700 text-base leading-relaxed font-medium">
+                  Our intelligent search engine instantly filters through thousands of schemes to match your profile and display only the ones you're eligible for.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3: Select & Apply */}
+            <div className="group relative bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-8 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-105 border-2 border-purple-200">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-purple-600 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              
+              <div className="relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Send className="text-white" size={32} />
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  Step 3
+                </h3>
+                <h4 className="text-xl font-semibold text-purple-700 mb-4">
+                  Select & Apply
+                </h4>
+                <p className="text-gray-700 text-base leading-relaxed font-medium">
+                  Compare benefits and requirements, select the schemes that work best for you, and complete the application process with guided step-by-step instructions.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

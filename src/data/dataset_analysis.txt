@@ -1,0 +1,39 @@
+Total schemes: 4242
+
+Sample scheme keys: ['scheme_id', 'scheme_name', 'url', 'scheme_level', 'implementation_type', 'ministry', 'details', 'benefits', 'eligibility', 'exclusions', 'application_process', 'documents_required', 'faqs', 'sources_references', 'states', 'scheme_category', 'gender', 'age_criteria', 'marital_status', 'caste_categories', 'minority', 'bpl_applicable', 'residence', 'requires_student', 'employment_status', 'occupations', 'requires_disability', 'disability_percent', 'income_criteria', 'benefit_type', 'special_categories']
+
+================================================================================
+FILTER FIELD ANALYSIS - NEW DATASET (4242 schemes)
+================================================================================
+
+1. STATES (1 unique):
+   None: 4242
+
+2. GENDER (1 unique):
+   None: 4242
+
+3. CASTE (1 unique):
+   None: 4242
+
+4. RESIDENCE (1 unique):
+   None: 4242
+
+5. BENEFIT TYPE (1 unique):
+   None: 4242
+
+6. MARITAL STATUS (1 unique):
+   None: 4242
+
+7. EMPLOYMENT STATUS (1 unique):
+   None: 4242
+
+8. OCCUPATION (1 unique):
+   None: 4242
+
+9. SPECIAL CATEGORIES (0 unique individual values):
+
+10. DISABILITY PERCENTAGE (1 unique):
+   None: 4242
+
+11. SCHEME CATEGORY (1 unique):
+   None: 4242

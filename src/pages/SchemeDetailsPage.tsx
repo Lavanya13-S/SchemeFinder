@@ -106,17 +106,6 @@ export default function SchemeDetailsPage() {
 
           {/* Apply Button */}
           <div className="flex gap-4">
-            {scheme.url && (
-              <a
-                href={scheme.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Apply Online
-                <ExternalLink className="ml-2" size={18} />
-              </a>
-            )}
             <button className="px-6 py-3 border-2 border-green-600 text-green-600 font-semibold rounded-lg hover:bg-green-50 transition-colors">
               Save Scheme
             </button>

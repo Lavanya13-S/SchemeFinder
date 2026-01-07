@@ -6,52 +6,52 @@ export default function StatesPage() {
   const navigate = useNavigate();
 
   const handleStateClick = (state: string) => {
-    navigate(`/schemes?state=${encodeURIComponent(state)}`);
+    navigate(`/schemes?states=${encodeURIComponent(state)}`);
   };
 
   // Enhanced state-specific scheme counts with actual data
   const getStateSchemeCount = (stateName: string) => {
     const stateData: { [key: string]: number } = {
-      'Andaman and Nicobar Islands': 19,
-      'Andhra Pradesh': 51,
-      'Arunachal Pradesh': 37,
-      'Assam': 65,
-      'Bihar': 113,
-      'Chandigarh': 23,
-      'Chhattisgarh': 52,
-      'Dadra and Nagar Haveli and Daman and Diu': 15,
-      'Delhi': 45,
-      'Goa': 25,
-      'Gujarat': 82,
-      'Haryana': 48,
-      'Himachal Pradesh': 38,
-      'Jammu and Kashmir': 45,
-      'Jharkhand': 62,
-      'Karnataka': 85,
-      'Kerala': 65,
-      'Lakshadweep': 12,
-      'Madhya Pradesh': 98,
-      'Maharashtra': 142,
-      'Manipur': 30,
-      'Meghalaya': 32,
-      'Mizoram': 20,
-      'Nagaland': 28,
-      'Odisha': 72,
-      'Puducherry': 16,
-      'Punjab': 55,
-      'Rajasthan': 89,
-      'Sikkim': 18,
-      'Tamil Nadu': 95,
-      'Telangana': 68,
-      'Tripura': 35,
-      'Uttar Pradesh': 156,
-      'Uttarakhand': 42,
-      'West Bengal': 108
+      'Andaman and Nicobar Islands': 18,
+      'Andhra Pradesh': 43,
+      'Arunachal Pradesh': 33,
+      'Assam': 63,
+      'Bihar': 106,
+      'Chandigarh': 0,
+      'Chhattisgarh': 88,
+      'Dadra and Nagar Haveli and Daman and Diu': 40,
+      'Delhi': 54,
+      'Goa': 196,
+      'Gujarat': 567,
+      'Haryana': 251,
+      'Himachal Pradesh': 63,
+      'Jammu and Kashmir': 37,
+      'Jharkhand': 87,
+      'Karnataka': 55,
+      'Kerala': 78,
+      'Lakshadweep': 8,
+      'Madhya Pradesh': 168,
+      'Maharashtra': 82,
+      'Manipur': 24,
+      'Meghalaya': 55,
+      'Mizoram': 15,
+      'Nagaland': 19,
+      'Odisha': 58,
+      'Puducherry': 184,
+      'Punjab': 34,
+      'Rajasthan': 139,
+      'Sikkim': 20,
+      'Tamil Nadu': 211,
+      'Telangana': 20,
+      'Tripura': 33,
+      'Uttar Pradesh': 301,
+      'Uttarakhand': 170,
+      'West Bengal': 67
     };
-    return stateData[stateName] || 25;
+    return stateData[stateName] || 0;
   };
 
-  const centralSchemeCount = 568;
+  const centralSchemeCount = 358;
 
   // Get a nice color scheme for each state/UT
   const getStateColor = (index: number, isUT: boolean) => {
