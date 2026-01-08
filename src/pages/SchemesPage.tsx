@@ -621,7 +621,7 @@ export default function SchemesPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center space-x-2 my-8">
+                  <div className="flex justify-center items-center gap-1 my-8 flex-wrap">
                     {/* Previous Button */}
                     <button
                       onClick={() => {
@@ -631,7 +631,7 @@ export default function SchemesPage() {
                         }
                       }}
                       disabled={currentPage === 1}
-                      className={`px-3 py-2 rounded-lg ${
+                      className={`px-2 py-2 rounded-lg text-sm whitespace-nowrap ${
                         currentPage === 1
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -640,23 +640,73 @@ export default function SchemesPage() {
                       ← Prev
                     </button>
 
-                    {/* Page Numbers */}
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => {
-                          setCurrentPage(page);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className={`px-3 py-2 rounded-lg font-medium ${
-                          currentPage === page
-                            ? 'bg-green-600 text-white'
-                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
+                    {/* Page Numbers - Smart Pagination */}
+                    {(() => {
+                      const pages: (number | string)[] = [];
+                      const leftCount = 4; // Show first 4 pages
+                      const rightCount = 3; // Show last 3 pages
+                      const middleCount = 2; // Show 2 pages around current page
+                      
+                      if (totalPages <= leftCount + rightCount + 2) {
+                        // Show all pages if total is small
+                        for (let i = 1; i <= totalPages; i++) {
+                          pages.push(i);
+                        }
+                      } else {
+                        // Always show first 4 pages
+                        for (let i = 1; i <= Math.min(leftCount, totalPages); i++) {
+                          pages.push(i);
+                        }
+                        
+                        // Add ellipsis and pages around current page if needed
+                        const middleStart = Math.max(leftCount + 1, currentPage - middleCount);
+                        const middleEnd = Math.min(totalPages - rightCount, currentPage + middleCount);
+                        
+                        if (middleStart > leftCount + 1) {
+                          pages.push('...'); // Left ellipsis
+                        }
+                        
+                        for (let i = middleStart; i <= middleEnd; i++) {
+                          if (!pages.includes(i)) {
+                            pages.push(i);
+                          }
+                        }
+                        
+                        if (middleEnd < totalPages - rightCount) {
+                          pages.push('...'); // Right ellipsis
+                        }
+                        
+                        // Always show last 3 pages
+                        for (let i = Math.max(middleEnd + 1, totalPages - rightCount + 1); i <= totalPages; i++) {
+                          if (!pages.includes(i)) {
+                            pages.push(i);
+                          }
+                        }
+                      }
+                      
+                      return pages.map((page, idx) => (
+                        page === '...' ? (
+                          <span key={`ellipsis-${idx}`} className="px-2 py-2 text-gray-700">
+                            ...
+                          </span>
+                        ) : (
+                          <button
+                            key={page}
+                            onClick={() => {
+                              setCurrentPage(page as number);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className={`px-3 py-2 rounded-lg font-medium text-sm min-w-max ${
+                              currentPage === page
+                                ? 'bg-green-600 text-white'
+                                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      ));
+                    })()}
 
                     {/* Next Button */}
                     <button
@@ -667,7 +717,7 @@ export default function SchemesPage() {
                         }
                       }}
                       disabled={currentPage === totalPages}
-                      className={`px-3 py-2 rounded-lg ${
+                      className={`px-2 py-2 rounded-lg text-sm whitespace-nowrap ${
                         currentPage === totalPages
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
